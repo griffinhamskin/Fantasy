@@ -10,6 +10,32 @@ class Game:
         self.clock = pygame.time.Clock()
         self.running = True
 
+        self.character_spritesheet = Spritesheet('img/baer_idle.png')
+        self.character_left = Spritesheet('img/bear_left.png')
+        self.character_right = Spritesheet('img/bear_right.png')
+        self.character_attack = Spritesheet('img/bear_attack.png')
+        self.terrain_spritesheet = Spritesheet('img/rock.png')
+        self.background_sprite = Spritesheet('img/background.png')
+
+        self.enemy_idle = Spritesheet('img/idle_turtle.png')
+        self.enemy_left = Spritesheet('img/left_turtle.png')
+        self.enemy_right = Spritesheet('img/right_turtle.png')
+        self.enemy_dead = Spritesheet('img/dead_turtle.png')
+        self.enemy_attack = Spritesheet('img/attack_turtle.png')
+
+    def createTilemap(self):
+        for i, row in enumerate(tilemap): 
+            for j, column in enumerate(row):
+                Ground(self,j,i)
+                if column == "B":
+                    Block(self, j, i)
+                if column == "P":
+                    Player(self, j, i)
+                if column == "E":
+                    Enemy(self, j, i)
+
+
+
     def new(self):
         self.playing = True
 
@@ -18,7 +44,8 @@ class Game:
         self.enemies = pygame.sprite.LayeredUpdates()
         self.attacks = pygame.sprite.LayeredUpdates()
 
-        self.player = Player(self,1,2)
+        self.createTilemap()
+
     def events(self):
         for event in pygame.event.get():
             if event.type ==pygame.QUIT:
