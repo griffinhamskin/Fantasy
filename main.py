@@ -101,8 +101,6 @@ class Game:
         self.screen.fill(BLACK)
         self.all_sprites.draw(self.screen)
         self.clock.tick(FPS)
-        for i in range(lives):
-            self.screen.blit(self.heart, (50*i,15))
         pygame.display.update()
 
     def main(self):
