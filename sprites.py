@@ -12,17 +12,25 @@ class Spritesheet:
         sprite.set_colorkey(BLACK)
         return sprite
 
+
+
+
+
 class Player(pygame.sprite.Sprite):
     def __init__(self,game,x,y):
         self.game = game
         self._layer = PLAYER_LAYER
         self.groups = self.game.all_sprites
+        global lives
+        lives = 5
         pygame.sprite.Sprite.__init__(self,self.groups)
+
+        self.powerupspeed = 1
 
         self.x = x *TILESIZE
         self.y = y *TILESIZE
-        self.width = TILESIZE
-        self.height = TILESIZE
+        self.width = TILESIZE/1.2
+        self.height = TILESIZE/1.2
 
         self.x_change = 0
         self.y_change = 0
@@ -37,10 +45,13 @@ class Player(pygame.sprite.Sprite):
         self.rect.x = self.x
         self.rect.y=self.y
 
+        
+
     def update(self):
         self.movement()
         self.animate()
         self.collide_enemy()
+        self.collide_powerup()
 
         self.rect.x += self.x_change
         self.collide_blocks('x')
@@ -54,24 +65,25 @@ class Player(pygame.sprite.Sprite):
         keys = pygame.key.get_pressed()
         if keys[pygame.K_LEFT]:
             for sprite in self.game.all_sprites:
-                sprite.rect.x += PLAYER_SPEED
-            self.x_change -= PLAYER_SPEED
+                sprite.rect.x += PLAYER_SPEED*self.powerupspeed
+            self.x_change -= PLAYER_SPEED*self.powerupspeed
             self.facing = 'left'
         if keys[pygame.K_RIGHT]:
             for sprite in self.game.all_sprites:
-                sprite.rect.x -= PLAYER_SPEED
-            self.x_change += PLAYER_SPEED
+                sprite.rect.x -= PLAYER_SPEED*self.powerupspeed
+            self.x_change += PLAYER_SPEED*self.powerupspeed
             self.facing = 'right'
         if keys[pygame.K_UP]:
             for sprite in self.game.all_sprites:
-                sprite.rect.y += PLAYER_SPEED
-            self.y_change -= PLAYER_SPEED
+                sprite.rect.y += PLAYER_SPEED*self.powerupspeed
+            self.y_change -= PLAYER_SPEED*self.powerupspeed
             self.facing = 'up'
         if keys[pygame.K_DOWN]:
             for sprite in self.game.all_sprites:
-                sprite.rect.y -= PLAYER_SPEED
-            self.y_change += PLAYER_SPEED
+                sprite.rect.y -= PLAYER_SPEED*self.powerupspeed
+            self.y_change += PLAYER_SPEED*self.powerupspeed
             self.facing = 'down'
+            
 
     def collide_blocks(self,direction):
         if direction =="x":
@@ -80,26 +92,33 @@ class Player(pygame.sprite.Sprite):
                 if self.x_change > 0:
                     self.rect.x = hits[0].rect.left - self.rect.width
                     for sprite in self.game.all_sprites:
-                        sprite.rect.x+= PLAYER_SPEED
+                        sprite.rect.x+= PLAYER_SPEED*self.powerupspeed
                 if self.x_change < 0:
                     self.rect.x = hits[0].rect.right 
                     for sprite in self.game.all_sprites:
-                        sprite.rect.x-= PLAYER_SPEED
+                        sprite.rect.x-= PLAYER_SPEED*self.powerupspeed
         if direction == "y":
             hits = pygame.sprite.spritecollide(self, self.game.blocks, False)
             if hits:
                 if self.y_change>0:
                     self.rect.y = hits[0].rect.top - self.rect.height
                     for sprite in self.game.all_sprites:
-                        sprite.rect.y+= PLAYER_SPEED
+                        sprite.rect.y+= PLAYER_SPEED*self.powerupspeed
                 if self.y_change<0:
                     self.rect.y = hits[0].rect.bottom
                     for sprite in self.game.all_sprites:
-                        sprite.rect.y-= PLAYER_SPEED
+                        sprite.rect.y-= PLAYER_SPEED*self.powerupspeed
     def collide_enemy(self):
-        hits=pygame.sprite.spritecollide(self, self.game.enemies, False)
+        hits=pygame.sprite.spritecollide(self, self.game.enemies, True)
         if hits:
-            self.game.playing = False
+            lives -=1
+            
+
+    
+    def collide_powerup(self):
+        hits=pygame.sprite.spritecollide(self, self.game.powerups, True)
+        if hits:
+            self.powerupspeed+=1
     def animate(self):
         down_animations = [
             self.game.character_spritesheet.get_sprite(0,0, self.width,self.height)
@@ -119,6 +138,7 @@ class Player(pygame.sprite.Sprite):
             self.image = self.game.character_left.get_sprite(0,0,self.width, self.height)
         if self.facing == "right":
             self.image = self.game.character_right.get_sprite(0,0,self.width, self.height)
+
 
 class Enemy(pygame.sprite.Sprite):
     def __init__(self, game, x, y):
@@ -267,7 +287,7 @@ class Attack(pygame.sprite.Sprite):
         self.width = TILESIZE
         self.height = TILESIZE
 
-        self.image = self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height)
+        self.image = self.game.attack1.get_sprite(0,0, self.width, self.height)
         self.animation_loop =0
 
         self.rect= self.image.get_rect()
@@ -281,29 +301,30 @@ class Attack(pygame.sprite.Sprite):
     def collide(self):
         hits = pygame.sprite.spritecollide(self, self.game.enemies, True)
 
+
     def animate(self):
         direction = self.game.player.facing
 
-        down_animations = [self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),]
-        left_animations = [self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),]
-        right_animations = [self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),]
-        up_animations = [self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),
-            self.game.attack_spritesheet.get_sprite(0,0, self.width, self.height),]
+        down_animations = [self.game.attack1.get_sprite(0,0, self.width, self.height),
+            self.game.attack2.get_sprite(0,0, self.width, self.height),
+            self.game.attack3.get_sprite(0,0, self.width, self.height),
+            self.game.attack4.get_sprite(0,0, self.width, self.height),
+            self.game.attack5.get_sprite(0,0, self.width, self.height),]
+        left_animations = [self.game.attack1.get_sprite(0,0, self.width, self.height),
+            self.game.attack2.get_sprite(0,0, self.width, self.height),
+            self.game.attack3.get_sprite(0,0, self.width, self.height),
+            self.game.attack4.get_sprite(0,0, self.width, self.height),
+            self.game.attack5.get_sprite(0,0, self.width, self.height),]
+        right_animations = [self.game.attack1.get_sprite(0,0, self.width, self.height),
+            self.game.attack2.get_sprite(0,0, self.width, self.height),
+            self.game.attack3.get_sprite(0,0, self.width, self.height),
+            self.game.attack4.get_sprite(0,0, self.width, self.height),
+            self.game.attack5.get_sprite(0,0, self.width, self.height),]
+        up_animations = [self.game.attack1.get_sprite(0,0, self.width, self.height),
+            self.game.attack2.get_sprite(0,0, self.width, self.height),
+            self.game.attack3.get_sprite(0,0, self.width, self.height),
+            self.game.attack4.get_sprite(0,0, self.width, self.height),
+            self.game.attack5.get_sprite(0,0, self.width, self.height),]
             
             
 
@@ -327,3 +348,55 @@ class Attack(pygame.sprite.Sprite):
             self.animation_loop += 0.5
             if self.animation_loop >=5:
                 self.kill()
+
+
+class Berryup(pygame.sprite.Sprite):
+    def __init__(self,game,x,y):
+        self.game = game
+        self._layer = ENEMY_LAYER
+        self.groups = self.game.all_sprites, self.game.powerups
+        pygame.sprite.Sprite.__init__(self,self.groups)
+        self.x =x*TILESIZE
+        self.y = y*TILESIZE
+        self.width = TILESIZE
+        self.height = TILESIZE
+
+        self.image = self.game.berryup.get_sprite(0,0, self.width, self.height)
+
+        self.rect= self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+    def collide(self):
+        hits = pygame.sprite.spritecollide(self, self.game.powerups, True)
+
+        if hits:
+            PLAYER_SPEED +=1
+            print('balls')
+
+
+class Lives(pygame.sprite.Sprite):
+    def __init__(self, game, x, y):
+        self.game = game
+        self._layer = PLAYER_LAYER
+        self.groups = self.game.all_sprites, self.game.attacks
+        pygame.sprite.Sprite.__init__(self,self.groups)
+        self.x =x
+        self.y = y
+        self.width = TILESIZE/2
+        self.height = TILESIZE/2
+
+        self.image = self.game.heart.get_sprite(0,0, self.width, self.height)
+        self.animation_loop =0
+
+        self.rect= self.image.get_rect()
+        self.rect.x = self.x
+        self.rect.y = self.y
+
+    def update(self):
+        pass
+
+    def collide(self):
+        hits = pygame.sprite.spritecollide(self, self.game.enemies, True)
+
+
